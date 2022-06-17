@@ -1,0 +1,29 @@
+version: '3.4'
+networks:
+  vpc:
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+volumes:
+  data1:
+
+services:
+  redis-commander:
+    container_name: jupyter
+    hostname: jupyter
+    image: jupyter/minimal-notebook
+    restart: always
+    environment:
+    - REDIS_PORT=6379
+    - REDIS_HOST=redis
+    - REDIS_PASSWORD=1234
+    ports:
+    - "8888:8888"
+    networks:
+      vpc:
+        ipv4_address: 172.21.0.2
+    volumes:
+    - data1:/home/jovyan/work
+
+
+
