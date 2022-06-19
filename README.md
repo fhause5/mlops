@@ -16,16 +16,43 @@ localhost:8080, login with user “airflow” and password “airflow”
 
 ### kubeflow
 
-https://www.kubeflow.org/docs/distributions/azure/deploy/install-kubeflow/
+https://www.kubeflow.org/docs/components/pipelines/installation/localcluster-deployment/
 
-### kubeflow on minikube
 
-```commandline
-minikube start --kubernetes-version=v1.18.10 --memory 8096 --cpus 4 --disk-size 60g --vm-driver virtualbox
-minikube start -p minikube2 --kubernetes-version=v1.18.10
-curl -O https://raw.githubusercontent.com/kubeflow/kubeflow/v0.2-branch/bootstrap/bootstrapper.yaml
-kubectl create -f bootstrapper.yaml
+### KIND
+
 ```
+choco install kind -y
+kind create cluster
+```
+
+Kubeflow:
+
+```
+export PIPELINE_VERSION=1.8.2
+kubectl apply -k "github.com/kubeflow/pipelines/manifests/kustomize/cluster-scoped-resources?ref=$PIPELINE_VERSION"
+kubectl wait --for condition=established --timeout=60s crd/applications.app.k8s.io
+kubectl apply -k "github.com/kubeflow/pipelines/manifests/kustomize/env/platform-agnostic-pns?ref=$PIPELINE_VERSION"
+
+kubectl port-forward -n kubeflow svc/ml-pipeline-ui 8080:80
+
+```
+
+### Compile python onto YAML using conda create new python environment 
+
+Install  miniconda
+> https://docs.conda.io/en/latest/miniconda.html
+
+```
+conda create --name mlops-pipeline python=3.7
+conda init bash
+exit
+conda activate mlops-pipeline
+cd mlops/kubeflow/containerless
+pip3 install kfp --upgrade
+dsl-compile --py containerless.py --out pipeline.yaml
+```
+
 
 
 ### Data
