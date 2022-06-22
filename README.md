@@ -1,5 +1,16 @@
 # mlops
-### Airflow
+
+#  References
+
+* [Airflow](#Airflow)
+* [kubeflow](#kubeflow)
+* [Data](#Data)
+* [Architecture](#Architecture)
+
+
+# Airflow
+<span style="color: teal">&#x1F535; Airflow
+</span>
 
 https://airflow.apache.org/docs/apache-airflow/stable/start/docker.html#docker-compose-yaml
 
@@ -14,7 +25,9 @@ localhost:8080, login with user “airflow” and password “airflow”
 * PUT DAGS into: C:\Users\<USER>\docker\airflow\dags
 
 
-### kubeflow
+# kubeflow
+<span style="color: teal">&#x1F535; kubeflow
+</span>
 
 https://www.kubeflow.org/docs/components/pipelines/installation/localcluster-deployment/
 
@@ -53,9 +66,28 @@ pip3 install kfp --upgrade
 dsl-compile --py containerless.py --out pipeline.yaml
 ```
 
+```
+conda create --name metrics-pipeline python=3.7
+conda init bash
+exit
+conda activate metrics-pipeline
+cd mlops/kubeflow/containerless
+pip3 install kfp --upgrade
+dsl-compile --py containerless.py --out pipeline.yaml
+```
 
 
-### Data
-
+# Data
+<span style="color: teal">&#x1F535; Data
+</span>
 
 * https://web.stanford.edu/class/archive/cs/cs109/cs109.1166/stuff/titanic.csv"
+
+# Architecture
+<span style="color: teal">&#x1F535; Architecture
+</span>
+
+### Pipelines-architecture
+
+![](img/pipelines-architecture.png)
+
