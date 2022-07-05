@@ -1,0 +1,75 @@
+import kfp
+from kfp import dsl
+import requests
+from os import getcwd
+import logging
+import requests
+from os import getcwd
+import os
+import zipfile
+import shutil
+
+
+IMAGE_NAME = 'docker.io/fhause5/machine-learning-toxic:latest'
+IMAGE_COMMAND = ["python", "/opt/app/ml/delete_annoying_comments/delete_annoying_comments.py", "--dataset", "/opt/app/data/labeled.csv", "--user", "нах"]
+Data_url = "https://raw.githubusercontent.com/fhause5/dataset/main/labeled.zip"
+Data_name = 'labeled.zip'
+
+def dataset_unzip(filename):
+    print(f'[INFO] unzip file: {filename}')
+    # Create local targets
+    os.makedirs("./data", exist_ok=True)
+    os.makedirs("./unzipped_data", exist_ok=True)
+    shutil.copyfile(filename, "./data")
+    # Unzip
+    for zip in os.listdir("./data"):
+        with zipfile.ZipFile(os.path.join("./data", zip), 'r') as file:
+            file.extractall("./unzipped_data")
+
+def dataset_download(data, data_name):
+    directory = getcwd()
+    filename = directory + data_name
+    requests.get(data)
+    show_file = os.listdir(directory)
+    print(f'[INFO] file path: ' + filename)
+    print(f'[INFO] show_file path: ' + str(show_file))
+
+
+
+data_download = dataset_download(Data_url, Data_name)
+unzip_files = dataset_unzip(Data_name)
+
+download_files_op = kfp.components.create_component_from_func(data_download, base_image=IMAGE_NAME) 
+
+unzip_files_op = kfp.components.create_component_from_func(unzip_files, base_image=IMAGE_NAME) 
+# csv_s3_reader_op = kfp.components.create_component_from_func(csv_s3_reader, base_image=IMAGE_NAME) 
+
+
+@dsl.pipeline(
+    name='Toxic',
+    description='Download/uzip/execute/upload'
+)
+def pipeline():
+    
+    first_task = download_files_op
+    second_tasl = unzip_files_op
+
+
+    op0 = dsl.ContainerOp(
+        name="run",
+        image=IMAGE_NAME,
+        command=IMAGE_COMMAND,
+        file_outputs={'out': '/tmp/out.log'},
+    )
+
+    with dsl.ParallelFor(op0.output) as item:
+        op1 = dsl.ContainerOp(
+            name="toxic-out-item-print",
+            image="library/bash:4.4.23",
+            command=["sh", "-c"],
+            arguments=["echo do output op1 item: %s" % item],
+        )
+    
+
+if __name__ == '__main__':
+    kfp.compiler.Compiler().compile(pipeline, __file__ + '.yaml')

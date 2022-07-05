@@ -89,5 +89,8 @@ dsl-compile --py containerless.py --out pipeline.yaml
 
 ### Pipelines-architecture
 
+* advanced_pipeline: https://pytorch.org/torchx/latest/examples_pipelines/kfp/advanced_pipeline.html
+* Download https://towardsdatascience.com/tutorial-basic-kubeflow-pipeline-from-scratch-5f0350dc1905
+
 ![](img/pipelines-architecture.png)
 
