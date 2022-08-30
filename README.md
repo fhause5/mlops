@@ -12,6 +12,74 @@
 <span style="color: teal">&#x1F535; Airflow
 </span>
 
+### EFK > Airflow
+
+> https://medium.com/@dulshanr12/airflow-log-integration-with-fluent-bit-elk-stack-kubernetes-f2afa3a6ff00
+
+* cron for DAGs
+* monitoring/archistrator 
+* ETL pipelines (DAGs)  
+
+EFK:de1:fbomal
+
+```
+kubectl create ns dataplatform
+
+helm repo add elastic https://helm.elastic.co
+helm repo add apache-airflow https://airflow.apache.org
+helm repo add fluent https://fluent.github.io/helm-charts
+helm repo update
+
+helm install elastic-operator-crds elastic/eck-operator-crds --version 2.6.1
+helm install elastic-operator elastic/eck-operator --version 2.6.1 -n elastic-system --create-namespace \
+  --set=installCRDs=false \
+  --set=managedNamespaces='{dataplatform}' \
+  --set=createClusterScopedResources=false \
+  --set=webhook.enabled=false \
+  --set=config.validateStorageClass=false
+
+kubectl -n elastic-system apply -f - <<EOF
+kind: Secret
+apiVersion: v1
+metadata:
+  name: de-filerealm-secret
+  namespace: elastic-system
+stringData:
+  users: |-
+    de1:$2a$10$xfkUJWUfFQpnh6crf05NiuT1FoCSPiOKyAGvU.lORHusHV7XhScZG
+  users_roles: |-
+    superuser:de1
+---
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: quickstart
+spec:
+  version: 8.5.0
+  auth:
+    fileRealm:
+    - secretName: de-filerealm-secret
+  nodeSets:
+  - name: default
+    count: 1
+    config:
+      action.auto_create_index:  "+filebeat-*,+fluentbit-*,-index1,+ind*" 
+      node.store.allow_mmap: false
+EOF
+
+kubectl get elasticsearch -n elastic-system
+helm install -f airflow/airflow-values.yaml airflow-uat apache-airflow/airflow --version 1.7.0 --namespace dataplatform
+kubectl apply -f airflow/kibana-values.yaml -n elastic-system
+kubectl -n elastic-system apply -f airflow/logstash.yam l
+helm install -f airflow/fluent-bit-values.yaml fluent-bit fluent/fluent-bit --version 0.22.0 --namespace elastic-system
+
+kubectl port-forward svc/airflow-uat-webserver 8080:8080 --namespace dataplatform
+kubectl port-forward service/quickstart-kb-http 5601:5601 -n elastic-system
+kubectl -n elastic-user get secret quickstart-es-elastic-user -o go-template='{{.data.elastic | base64decode}}'
+```
+
+### docker-compose
+
 https://airflow.apache.org/docs/apache-airflow/stable/start/docker.html#docker-compose-yaml
 
 ```commandline
@@ -90,7 +158,12 @@ dsl-compile --py containerless.py --out pipeline.yaml
 ### Pipelines-architecture
 
 * advanced_pipeline: https://pytorch.org/torchx/latest/examples_pipelines/kfp/advanced_pipeline.html
-* Download https://towardsdatascience.com/tutorial-basic-kubeflow-pipeline-from-scratch-5f0350dc1905
+* Download https://gist.githubusercontent.com/Anvil-Late/819bd6433c1c2987a263f097027ec1a2/raw/8f93a2de4e69dd36306231e3b924bb920c931e11/full_pipeline.py
+* The best practises: https://github.com/kelvins/awesome-mlops
 
 ![](img/pipelines-architecture.png)
 
+![](img/hidden-technical-debt.png)
+
+
+Pipeline: Triger >  scan > download > unzip > старт разных эксперементов > get output > send output > monitor > оценка качества > метрики после эксперемента скорость/качество
