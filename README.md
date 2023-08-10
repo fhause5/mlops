@@ -18,7 +18,10 @@
 
 * cron for DAGs
 * monitoring/archistrator 
-* ETL pipelines (DAGs)  
+* ETL pipelines (DAGs)
+* can get data from Elasticsearch/mysql
+* Created git-sync for remote DAGS
+* Logs to EKF
 
 EFK:de1:fbomal
 
